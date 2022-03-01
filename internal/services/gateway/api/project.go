@@ -19,7 +19,9 @@ import (
 	"net/http"
 	"net/url"
 
+	"agola.io/agola/internal/errors"
 	"agola.io/agola/internal/services/gateway/action"
+	"agola.io/agola/internal/services/gateway/common"
 	"agola.io/agola/internal/util"
 	csapitypes "agola.io/agola/services/configstore/api/types"
 	cstypes "agola.io/agola/services/configstore/types"
@@ -67,6 +69,44 @@ func (h *CreateProjectHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	res := createProjectResponse(project)
 	if err := util.HTTPResponse(w, http.StatusCreated, res); err != nil {
 		h.log.Err(err).Send()
+	}
+
+	// create project run
+	curUserID := common.CurrentUserID(ctx)
+
+	user, err := h.ah.GetUser(ctx, curUserID)
+	if util.HTTPError(w, err) {
+		h.log.Err(err).Send()
+		return
+	}
+
+	la := user.LinkedAccounts[project.LinkedAccountID]
+	if la == nil {
+		h.log.Err(errors.Errorf("linked account id %q for user %q doesn't exist", project.LinkedAccountID, user.Name)).Send()
+		return
+	}
+
+	rs, err := h.ah.GetRemoteSource(ctx, la.RemoteSourceID)
+	if util.HTTPError(w, err) {
+		h.log.Err(err).Send()
+		return
+	}
+	gitSource, err := h.ah.GetGitSource(ctx, rs, user.Name, la)
+	if util.HTTPError(w, err) {
+		h.log.Err(err).Send()
+		return
+	}
+
+	repoBranch, err := gitSource.GetRepoBranch(req.RepoPath)
+	if util.HTTPError(w, err) {
+		h.log.Err(err).Send()
+		return
+	}
+
+	err = h.ah.ProjectCreateRun(ctx, res.ID, repoBranch.Name, "", "", repoBranch.SHAId)
+	if util.HTTPError(w, err) {
+		h.log.Err(err).Send()
+		return
 	}
 }
 

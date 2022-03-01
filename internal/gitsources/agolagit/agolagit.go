@@ -211,3 +211,7 @@ func (c *Client) TagLink(repoInfo *gitsource.RepoInfo, tag string) string {
 func (c *Client) PullRequestLink(repoInfo *gitsource.RepoInfo, prID string) string {
 	return ""
 }
+
+func (c *Client) GetRepoBranch(repopath string) (*gitsource.RepoBranch, error) {
+	return nil, nil
+}

@@ -520,3 +520,26 @@ func (c *Client) TagLink(repoInfo *gitsource.RepoInfo, tag string) string {
 func (c *Client) PullRequestLink(repoInfo *gitsource.RepoInfo, prID string) string {
 	return fmt.Sprintf("%s/pull/%s", repoInfo.HTMLURL, prID)
 }
+
+func (c *Client) GetRepoBranch(repopath string) (*gitsource.RepoBranch, error) {
+	owner, reponame, err := parseRepoPath(repopath)
+	if err != nil {
+		return nil, err
+	}
+
+	var opt *github.BranchListOptions
+	rr, _, err := c.client.Repositories.ListBranches(context.TODO(), owner, reponame, opt)
+
+	if err != nil {
+		return nil, err
+	}
+	return fromGithubRepoBranch(rr), nil
+}
+
+func fromGithubRepoBranch(rr []*github.Branch) *gitsource.RepoBranch {
+	return &gitsource.RepoBranch{
+		Name:    *rr[0].Name,
+		SHAId:   *rr[0].Commit.SHA,
+		Message: *rr[0].Commit.Commit.Message,
+	}
+}

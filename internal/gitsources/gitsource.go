@@ -35,6 +35,7 @@ const (
 var ErrUnauthorized = errors.New("unauthorized")
 
 type GitSource interface {
+	GetRepoBranch(repopath string) (*RepoBranch, error)
 	GetRepoInfo(repopath string) (*RepoInfo, error)
 	GetFile(repopath, commit, file string) ([]byte, error)
 	DeleteDeployKey(repopath, title string) error
@@ -82,11 +83,12 @@ type Oauth2Source interface {
 }
 
 type RepoInfo struct {
-	ID           string
-	Path         string
-	HTMLURL      string
-	SSHCloneURL  string
-	HTTPCloneURL string
+	ID            string
+	Path          string
+	HTMLURL       string
+	SSHCloneURL   string
+	HTTPCloneURL  string
+	DefaultBranch string
 }
 
 type UserInfo struct {
@@ -110,5 +112,11 @@ type Ref struct {
 
 type Commit struct {
 	SHA     string
+	Message string
+}
+
+type RepoBranch struct {
+	Name    string
+	SHAId   string
 	Message string
 }

@@ -420,11 +420,12 @@ func (c *Client) ListUserRepos() ([]*gitsource.RepoInfo, error) {
 
 func fromGiteaRepo(rr *gitea.Repository) *gitsource.RepoInfo {
 	return &gitsource.RepoInfo{
-		ID:           strconv.FormatInt(rr.ID, 10),
-		Path:         path.Join(rr.Owner.UserName, rr.Name),
-		HTMLURL:      rr.HTMLURL,
-		SSHCloneURL:  rr.SSHURL,
-		HTTPCloneURL: rr.CloneURL,
+		ID:            strconv.FormatInt(rr.ID, 10),
+		Path:          path.Join(rr.Owner.UserName, rr.Name),
+		HTMLURL:       rr.HTMLURL,
+		SSHCloneURL:   rr.SSHURL,
+		HTTPCloneURL:  rr.CloneURL,
+		DefaultBranch: rr.DefaultBranch,
 	}
 }
 
@@ -522,4 +523,25 @@ func (c *Client) TagLink(repoInfo *gitsource.RepoInfo, tag string) string {
 
 func (c *Client) PullRequestLink(repoInfo *gitsource.RepoInfo, prID string) string {
 	return fmt.Sprintf("%s/pulls/%s", repoInfo.HTMLURL, prID)
+}
+
+func (c *Client) GetRepoBranch(repopath string) (*gitsource.RepoBranch, error) {
+	var opt gitea.ListRepoBranchesOptions
+	owner, reponame, err := parseRepoPath(repopath)
+	if err != nil {
+		return nil, err
+	}
+	rr, err := c.client.ListRepoBranches(owner, reponame, opt)
+	if err != nil {
+		return nil, err
+	}
+	return fromGiteaRepoBranch(rr), nil
+}
+
+func fromGiteaRepoBranch(rr []*gitea.Branch) *gitsource.RepoBranch {
+	return &gitsource.RepoBranch{
+		Name:    rr[0].Name,
+		SHAId:   rr[0].Commit.ID,
+		Message: rr[0].Commit.Message,
+	}
 }

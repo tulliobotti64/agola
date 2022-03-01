@@ -393,3 +393,19 @@ func (c *Client) TagLink(repoInfo *gitsource.RepoInfo, tag string) string {
 func (c *Client) PullRequestLink(repoInfo *gitsource.RepoInfo, prID string) string {
 	return fmt.Sprintf("%s/merge_requests/%s", repoInfo.HTMLURL, prID)
 }
+
+func (c *Client) GetRepoBranch(repopath string) (*gitsource.RepoBranch, error) {
+	rr, _, err := c.client.Commits.GetCommit(repopath, repopath)
+	if err != nil {
+		return nil, err
+	}
+	return fromGitlabRepoBranch(rr), nil
+}
+
+func fromGitlabRepoBranch(rr *gitlab.Commit) *gitsource.RepoBranch {
+	return &gitsource.RepoBranch{
+		Name:    rr.Title,
+		SHAId:   rr.ID,
+		Message: rr.Message,
+	}
+}
